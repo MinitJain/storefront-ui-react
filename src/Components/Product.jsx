@@ -1,26 +1,30 @@
-import React, { useContext } from "react";
-import { ProductDataContext } from "../context/ProductContext";
 import { Link } from "react-router-dom";
+import { useProducts } from "../context/ProductContext";
 
 const Product = () => {
-  const productData = useContext(ProductDataContext);
+  const { productData, loading, error } = useProducts();
 
-  let renderData = "Loading...";
+  if (loading) return <div className="centerMessage">Loading products…</div>;
+  if (error)
+    return <div className="centerMessage">Unable to load products.</div>;
+  if (!productData || productData.length === 0)
+    return <div className="centerMessage">No products available.</div>;
 
-  if (productData.length > 0) {
-    renderData = productData.map(function (elem, idx) {
-      return (
-        <Link className="product" key={idx} to={`/product/${elem.id}`}>
-          <div>
-            <img src={elem.image} alt="" />
-            <h2>{elem.title}</h2>
+  return (
+    <div className="productGrid">
+      {productData.map((item) => (
+        <Link className="productCard" key={item.id} to={`/product/${item.id}`}>
+          <div className="productImageWrap">
+            <img src={item.image} alt={item.title} />
+          </div>
+          <div className="productBody">
+            <h3 className="productTitle">{item.title}</h3>
+            <div className="productPrice">${item.price}</div>
           </div>
         </Link>
-      );
-    });
-  }
-
-  return <div className="allProducts">{renderData}</div>;
+      ))}
+    </div>
+  );
 };
 
 export default Product;

@@ -1,24 +1,44 @@
-import React, { createContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import { getAllProductData } from "../api/ProductApi";
 
-export const ProductDataContext = createContext();
+const ProductContext = createContext(null);
 
-const productContext = ({ children }) => {
+export const ProductContextProvider = ({ children }) => {
   const [productData, setProductData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const setData = async () => {
-    setProductData(await getAllProductData());
-  };
-
-  useEffect(function () {
-    setData();
+  useEffect(() => {
+    let mounted = true;
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const data = await getAllProductData();
+        if (mounted) setProductData(Array.isArray(data) ? data : []);
+      } catch (err) {
+        if (mounted) setError(err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+    fetchData();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
+  const value = { productData, loading, error };
+
   return (
-    <ProductDataContext.Provider value={productData}>
-      {children}
-    </ProductDataContext.Provider>
+    <ProductContext.Provider value={value}>{children}</ProductContext.Provider>
   );
 };
 
-export default productContext;
+export default ProductContextProvider;
+
+export const useProducts = () => {
+  const ctx = useContext(ProductContext);
+  if (ctx === null)
+    throw new Error("useProducts must be used within ProductContextProvider");
+  return ctx;
+};
